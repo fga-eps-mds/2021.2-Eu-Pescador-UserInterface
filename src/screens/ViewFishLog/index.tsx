@@ -1,58 +1,69 @@
-import React, { useState, useEffect } from 'react';
-import { ScrollView, Alert, ActivityIndicator } from 'react-native';
-import { CommonActions } from '@react-navigation/native';
-import * as FileSystem from 'expo-file-system';
-import * as MediaLibrary from 'expo-media-library';
-import NetInfo from '@react-native-community/netinfo';
+import React, { useState, useEffect } from "react";
+import { ScrollView, Alert, ActivityIndicator } from "react-native";
+import { CommonActions } from "@react-navigation/native";
+import * as FileSystem from "expo-file-system";
+import * as MediaLibrary from "expo-media-library";
+import NetInfo from "@react-native-community/netinfo";
 import {
   FishContainer,
   PropertyRow,
   DescriptionContainer,
   RegisterButtonView,
-} from './styles';
+} from "./styles";
+import { View, StyleSheet } from 'react-native';
+import { Property } from "../../components/Property";
+import { Title } from "../../components/Title";
+import { HalfToneText } from "../../components/HalfToneText";
+import { ProfileImage } from "../../components/ProfileImage";
+import { MapViewImage } from "../../components/MapViewImage";
+import { DefaultButton } from "../../components/Button";
 
-import { Property } from '../../components/Property';
-import { Title } from '../../components/Title';
-import { HalfToneText } from '../../components/HalfToneText';
-import { ProfileImage } from '../../components/ProfileImage';
-import { MapViewImage } from '../../components/MapViewImage';
-import { DefaultButton } from '../../components/Button';
-
-import { GetOneFishLog } from '../../services/fishLogService/getOneFishLog';
-import { DeleteFishLog } from '../../services/fishLogService/deleteFishLog';
-import { ExportFishLogs } from '../../services/fishLogService/exportFishLogs';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { NoFishImagePhoto } from '../../components/NoFishImagePhoto';
+import { GetOneFishLog } from "../../services/fishLogService/getOneFishLog";
+import { DeleteFishLog } from "../../services/fishLogService/deleteFishLog";
+import { ExportFishLogs } from "../../services/fishLogService/exportFishLogs";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { NoFishImagePhoto } from "../../components/NoFishImagePhoto";
+import MapView, { Marker } from "react-native-maps";
 
 export const FishLog = ({ navigation, route }: any) => {
   const [fishName, setFishName] = useState();
   const [fishPhoto, setFishPhoto] = useState<string>();
   const [fishLargeGroup, setFishLargeGroup] = useState();
   const [fishGroup, setFishGroup] = useState();
+  const [lat, setLat] = useState();
+  const [lng, setLng] = useState();
   const [fishSpecies, setFishSpecies] = useState();
   const [fishWeight, setFishWeight] = useState<number>();
   const [fishLength, setFishLength] = useState<number>();
   const [isAdmin, setIsAdmin] = useState<boolean>();
   const [isSuperAdmin, setIsSuperAdmin] = useState<boolean>();
   const [isLoading, setIsLoading] = useState(true);
-  const [logId, setLogId] = useState('');
+  const [logId, setLogId] = useState("");
   const [isReviewed, setIsReviewed] = useState(false);
-  const [userToken, setUserToken] = useState('');
+  const [userToken, setUserToken] = useState("");
+  const [mapRegion, setmapRegion] = useState({
+    latitude: lat,
+    longitude: lng,
+    latitudeDelta: 0.0922,
+    longitudeDelta: 0.0421,
+  });
 
   const connection = NetInfo.useNetInfo();
 
   const getData = async () => {
-    const userAdmin = await AsyncStorage.getItem('@eupescador/userAdmin');
-    const userSuperAdmin = await AsyncStorage.getItem('@eupescador/userSuperAdmin');
-    const token = await AsyncStorage.getItem('@eupescador/token');
+    const userAdmin = await AsyncStorage.getItem("@eupescador/userAdmin");
+    const userSuperAdmin = await AsyncStorage.getItem(
+      "@eupescador/userSuperAdmin"
+    );
+    const token = await AsyncStorage.getItem("@eupescador/token");
     if (token) {
       getFishLogProperties(token);
       setUserToken(token);
     }
-    if (userAdmin === 'true') {
+    if (userAdmin === "true") {
       setIsAdmin(true);
       setIsSuperAdmin(false);
-    } else if (userSuperAdmin === 'true') {
+    } else if (userSuperAdmin === "true") {
       setIsAdmin(false);
       setIsSuperAdmin(true);
     } else {
@@ -66,7 +77,7 @@ export const FishLog = ({ navigation, route }: any) => {
       await DeleteFishLog(userToken, logId);
       const resetAction = CommonActions.reset({
         index: 0,
-        routes: [{ name: 'WikiFishlogs' }],
+        routes: [{ name: "WikiFishlogs" }],
       });
       navigation.dispatch(resetAction);
     } catch (error) {
@@ -83,13 +94,13 @@ export const FishLog = ({ navigation, route }: any) => {
         let today = new Date();
         let date =
           today.getFullYear() +
-          '-' +
+          "-" +
           (today.getMonth() + 1) +
-          '-' +
+          "-" +
           today.getDate() +
-          '-' +
+          "-" +
           today.getHours() +
-          '-' +
+          "-" +
           today.getMinutes();
 
         let fileUri = FileSystem.documentDirectory + `registros-${date}.txt`;
@@ -97,23 +108,23 @@ export const FishLog = ({ navigation, route }: any) => {
           encoding: FileSystem.EncodingType.UTF8,
         });
         const asset = await MediaLibrary.createAssetAsync(fileUri);
-        await MediaLibrary.createAlbumAsync('euPescador', asset, false);
+        await MediaLibrary.createAlbumAsync("euPescador", asset, false);
 
         Alert.alert(
-          'Exportar Registro',
-          'Registro exportado com sucesso. Você pode encontrar o arquivo em /Pictures/euPescador',
+          "Exportar Registro",
+          "Registro exportado com sucesso. Você pode encontrar o arquivo em /Pictures/euPescador",
           [
             {
-              text: 'Ok',
+              text: "Ok",
             },
           ]
         );
       }
     } catch (error: any) {
       console.log(error);
-      Alert.alert('Exportar Registro', 'Falha ao exportar registro', [
+      Alert.alert("Exportar Registro", "Falha ao exportar registro", [
         {
-          text: 'Ok',
+          text: "Ok",
         },
       ]);
     }
@@ -148,6 +159,8 @@ export const FishLog = ({ navigation, route }: any) => {
         const base64Img = `data:image/png;base64,${log.photo}`;
         setFishPhoto(base64Img);
       }
+      setLat(log?.coordenates.latitude);
+      setLng(log?.coordenates.longitude);
       setFishName(log?.name);
       setFishSpecies(log?.species);
       setFishLargeGroup(log?.largeGroup);
@@ -172,8 +185,8 @@ export const FishLog = ({ navigation, route }: any) => {
       ) : (
         <ScrollView
           contentContainerStyle={{
-            alignItems: 'center',
-            justifyContent: 'center',
+            alignItems: "center",
+            justifyContent: "center",
           }}
         >
           {fishPhoto ? (
@@ -182,51 +195,63 @@ export const FishLog = ({ navigation, route }: any) => {
             <NoFishImagePhoto />
           )}
           <DescriptionContainer>
-            <Title text={fishName ? fishName : 'Nome não informado'} />
+            <Title text={fishName ? fishName : "Nome não informado"} />
             <HalfToneText
-              text={fishSpecies ? fishSpecies : 'Espécie não informado'}
+              text={fishSpecies ? fishSpecies : "Espécie não informado"}
             />
           </DescriptionContainer>
 
           <PropertyRow>
             <Property
               property="Grande Grupo"
-              value={fishLargeGroup ? fishLargeGroup : 'Não informado'}
+              value={fishLargeGroup ? fishLargeGroup : "Não informado"}
             />
 
             <Property
               property="Grupo"
-              value={fishGroup ? fishGroup : 'Não informado'}
+              value={fishGroup ? fishGroup : "Não informado"}
             />
           </PropertyRow>
 
           <PropertyRow>
             <Property
               property="Tamanho(cm)"
-              value={fishLength ? fishLength.toString() : 'Não informado'}
+              value={fishLength ? fishLength.toString() : "Não informado"}
             />
 
             <Property
               property="Peso(kg)"
-              value={fishWeight ? fishWeight.toString() : 'Não informado'}
+              value={fishWeight ? fishWeight.toString() : "Não informado"}
             />
           </PropertyRow>
-
-          <MapViewImage source={require('../../assets/map.png')} />
-
+          {lat || lng !== null ?   <MapView
+        style={{ alignSelf: 'stretch', height: 200, margin: 20 }}
+        initialRegion={{
+          latitude: lat  !== null ? lat : 0.0,
+          longitude:  lng !== null ? lng : 0.0,
+        }}
+      >
+           <Marker
+            coordinate={{latitude: lat !== null ? lat : 0.0,
+            longitude: lng !== null ? lng : 0.0}}
+            title={FishName}
+            description={FishGroup}
+         />
+      </MapView> : null}
+        
           {connection.isConnected ? (
             <RegisterButtonView>
-              {(isAdmin || isSuperAdmin) ? (
+              {isAdmin || isSuperAdmin ? (
                 <>
                   <DefaultButton
                     text="Revisar"
                     buttonFunction={() => {
                       navigation.navigate(
-                        'NewFishLog' as never,
+                        "NewFishLog" as never,
                         {
                           isNewRegister: false,
                           log_id: logId,
-                          name: 'Revisar Registro',
+                          name: "Revisar Registro",
                         } as never
                       );
                     }}
@@ -235,15 +260,15 @@ export const FishLog = ({ navigation, route }: any) => {
                     text="Exportar"
                     buttonFunction={() => {
                       Alert.alert(
-                        'Exportar Registro',
-                        'Você deseja exportar este registro?',
+                        "Exportar Registro",
+                        "Você deseja exportar este registro?",
                         [
                           {
-                            text: 'Cancelar',
-                            style: 'cancel',
+                            text: "Cancelar",
+                            style: "cancel",
                           },
                           {
-                            text: 'Ok',
+                            text: "Ok",
                             onPress: () => handleExportFishlog(),
                           },
                         ]
@@ -257,21 +282,21 @@ export const FishLog = ({ navigation, route }: any) => {
                   buttonFunction={() => {
                     if (isReviewed) {
                       Alert.alert(
-                        'Registro',
-                        'Não é possível editar esse registro pois ele já foi revisado por um pesquisador.',
+                        "Registro",
+                        "Não é possível editar esse registro pois ele já foi revisado por um pesquisador.",
                         [
                           {
-                            text: 'Ok',
+                            text: "Ok",
                           },
                         ]
                       );
                     } else {
                       navigation.navigate(
-                        'NewFishLog' as never,
+                        "NewFishLog" as never,
                         {
                           isNewRegister: false,
                           log_id: logId,
-                          name: 'Editar Registro',
+                          name: "Editar Registro",
                         } as never
                       );
                     }
@@ -284,25 +309,25 @@ export const FishLog = ({ navigation, route }: any) => {
                 buttonFunction={() => {
                   if (isReviewed) {
                     Alert.alert(
-                      'Excluir Registro',
-                      'Não é possível deletar esse registro pois ele já foi revisado por um pesquisador.',
+                      "Excluir Registro",
+                      "Não é possível deletar esse registro pois ele já foi revisado por um pesquisador.",
                       [
                         {
-                          text: 'Ok',
+                          text: "Ok",
                         },
                       ]
                     );
                   } else {
                     Alert.alert(
-                      'Excluir Registro',
-                      'Você tem certeza que deseja excluir este registro?',
+                      "Excluir Registro",
+                      "Você tem certeza que deseja excluir este registro?",
                       [
                         {
-                          text: 'Cancelar',
-                          style: 'cancel',
+                          text: "Cancelar",
+                          style: "cancel",
                         },
                         {
-                          text: 'Ok',
+                          text: "Ok",
                           onPress: () => handleDelete(),
                         },
                       ]
@@ -317,3 +342,9 @@ export const FishLog = ({ navigation, route }: any) => {
     </FishContainer>
   );
 };
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+  },
+});

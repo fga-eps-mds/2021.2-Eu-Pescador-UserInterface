@@ -2,7 +2,7 @@ import axios from 'axios';
 const config = require('../../../config');
 
 const adminService = axios.create({
-  baseURL: `http://${config.IP_ADDRESS}:4000`,
+  baseURL: `https://user-2022-1.herokuapp.com`,
 });
 
 export { adminService };

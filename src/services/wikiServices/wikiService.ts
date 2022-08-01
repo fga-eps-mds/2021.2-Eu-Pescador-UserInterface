@@ -2,7 +2,7 @@ import axios from 'axios';
 const config = require('../../../config');
 
 const wikiService = axios.create({
-  baseURL: `http://${config.IP_ADDRESS}:4002`,
+  baseURL: `https://fish-wiki-2022-1.herokuapp.com`,
 });
 
 export default wikiService;
