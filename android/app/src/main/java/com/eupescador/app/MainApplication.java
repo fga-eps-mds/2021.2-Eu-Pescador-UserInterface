@@ -5,12 +5,15 @@ import android.content.Context;
 import android.content.res.Configuration;
 import androidx.annotation.NonNull;
 
+import com.facebook.react.modules.storage.ReactDatabaseSupplier;
 import com.facebook.react.PackageList;
 import com.facebook.react.ReactApplication;
 import com.facebook.react.ReactInstanceManager;
 import com.facebook.react.ReactNativeHost;
 import com.facebook.react.ReactPackage;
 import com.facebook.soloader.SoLoader;
+
+import com.facebook.react.BuildConfig;
 
 import expo.modules.ApplicationLifecycleDispatcher;
 import expo.modules.ReactNativeHostWrapper;
@@ -20,13 +23,14 @@ import com.facebook.react.bridge.JSIModulePackage;
 import java.lang.reflect.InvocationTargetException;
 import java.util.List;
 
+
 public class MainApplication extends Application implements ReactApplication {
   private final ReactNativeHost mReactNativeHost = new ReactNativeHostWrapper(
     this,
     new ReactNativeHost(this) {
     @Override
     public boolean getUseDeveloperSupport() {
-      return BuildConfig.DEBUG;
+      return true;
     }
 
     @Override
@@ -53,6 +57,8 @@ public class MainApplication extends Application implements ReactApplication {
   public void onCreate() {
     super.onCreate();
     SoLoader.init(this, /* native exopackage */ false);
+    long size = 50L * 1024L * 1024L; // 50 MB
+    com.facebook.react.modules.storage.ReactDatabaseSupplier.getInstance(getApplicationContext()).setMaximumSize(size);
 
     initializeFlipper(this, getReactNativeHost().getReactInstanceManager());
     ApplicationLifecycleDispatcher.onApplicationCreate(this);

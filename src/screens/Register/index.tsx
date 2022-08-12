@@ -111,7 +111,7 @@ export function Register({ navigation }: any) {
           alertMessage = "Conta criada com sucesso!";
           result = true;
         } catch (error: any) {
-          console.log(error);
+          console.log('heyyy',error);
           alertMessage = error.response.data.message;
         }
       } else {

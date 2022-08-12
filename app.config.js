@@ -1,4 +1,3 @@
-const env = require('./config');
 
 export default ({ config }) => {
     return {
@@ -11,7 +10,7 @@ export default ({ config }) => {
             package: "com.eupescador.app",
             config: {
                 googleMaps: {
-                    apiKey: env.MAPS_API_KEY
+                    apiKey: 'AIzaSyBwvb4qyMjqj_mvY-wmsIuM52fwFAAJvXE'
                 }
             }
         },
